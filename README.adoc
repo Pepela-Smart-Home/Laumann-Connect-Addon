@@ -1,0 +1,36 @@
+= Laumann Connect — Home Assistant Add-on Repository
+
+Home Assistant Supervisor add-on repository for *Laumann Connect*, the remote-access
+add-on that pairs a customer's Home Assistant instance with the
+https://github.com/Pepela-Smart-Home/Pepela-Cloud[Pepela Cloud tunnel relay]
+(operated by Laumann Technology under the `laumannconnect.ge` domain).
+
+== Status
+
+Scaffolding only — no add-on has been implemented yet. This repository exists so it
+can be added as a custom repository URL in the Home Assistant Supervisor once the
+add-on itself is built.
+
+== Planned scope (Wave 1)
+
+* A single HAOS add-on (`laumann_connect/`) that runs `frpc` as its core process.
+* Onboarding via a short-lived *pairing code* instead of manually editing `frpc.toml`:
+  the add-on exchanges the code for its full tunnel configuration (relay address,
+  subdomain ID, token) against a new pairing endpoint on
+  https://github.com/Pepela-Smart-Home/Portal-Server[Portal-Server].
+* No server-side infrastructure lives in this repository — that stays in
+  `Pepela-Smart-Home/Pepela-Cloud`. This repository only ships what a customer's
+  Supervisor is meant to see and install.
+
+== Repository layout (Home Assistant convention)
+
+`repository.yaml`:: Identifies this repo to the Supervisor's add-on store.
+`<slug>/`:: One folder per add-on, each with its own `config.yaml`, `Dockerfile`,
+run script, icon and logo. Not yet created.
+
+== Conventions
+
+Documentation in Asciidoctor, diagrams in kUML via the `[kuml]` macro, default branch
+`master`, feature branches stay local, 4-agent implementation pipeline for every wave —
+see the vault's `CLAUDE.md`, section "Pepela-Repo-Konventionen", for the full ruleset
+this repository follows.
