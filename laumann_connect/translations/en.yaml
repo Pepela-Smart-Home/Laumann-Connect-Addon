@@ -1,0 +1,15 @@
+configuration:
+  pairing_code:
+    name: "Pairing code"
+    description: >-
+      The 8-character code from Laumann Technology, e.g. K7QM-3XRA. Case and dashes
+      don't matter. The code is valid for 15 minutes and can only be used once — after
+      a successful pairing this field is cleared automatically.
+  portal_base_url:
+    name: "Portal address"
+    description: >-
+      Base address of the portal server. Must start with https://. Only change this
+      if Laumann Technology asks you to.
+  log_level:
+    name: "Log level"
+    description: "Verbosity of the add-on log output. Default: info."

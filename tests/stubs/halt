@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+#
+# Test stub for the s6 halt binary at /run/s6/basedir/bin/halt. frpc/finish
+# `exec`s LC_S6_HALT_BIN on a real frpc failure; tests point that variable
+# here instead, and assert on this invocation via LC_TEST_HALT_LOG rather than
+# actually halting the test runner's container.
+: "${LC_TEST_HALT_LOG:=/dev/null}"
+printf 'halt called\n' >> "$LC_TEST_HALT_LOG"
+exit 0

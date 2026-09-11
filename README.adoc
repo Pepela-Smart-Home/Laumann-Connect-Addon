@@ -7,26 +7,111 @@ https://github.com/Pepela-Smart-Home/Pepela-Cloud[Pepela Cloud tunnel relay]
 
 == Status
 
-Scaffolding only — no add-on has been implemented yet. This repository exists so it
-can be added as a custom repository URL in the Home Assistant Supervisor once the
-add-on itself is built.
+Wave 1 implemented: the `laumann_connect` add-on redeems a pairing code against
+Portal-Server, adapts the returned `frpc.toml` for its own container networking, and
+runs `frpc` as an s6-rc longrun service. See `laumann_connect/CHANGELOG.md` for
+details and `laumann_connect/DOCS.md` for the customer-facing setup guide.
 
-== Planned scope (Wave 1)
+== Scope (Wave 1)
 
 * A single HAOS add-on (`laumann_connect/`) that runs `frpc` as its core process.
 * Onboarding via a short-lived *pairing code* instead of manually editing `frpc.toml`:
   the add-on exchanges the code for its full tunnel configuration (relay address,
-  subdomain ID, token) against a new pairing endpoint on
+  subdomain ID, token) against the pairing endpoint on
   https://github.com/Pepela-Smart-Home/Portal-Server[Portal-Server].
 * No server-side infrastructure lives in this repository — that stays in
   `Pepela-Smart-Home/Pepela-Cloud`. This repository only ships what a customer's
   Supervisor is meant to see and install.
+* No GHCR publish yet (no `image:` key in `config.yaml`) — the Supervisor builds the
+  add-on locally on the customer's device from this repository. Publishing prebuilt
+  images is follow-up work.
 
-== Repository layout (Home Assistant convention)
+== The `localIP` compensation (read before touching the pairing flow)
+
+The server-rendered `frpcToml` blob carries `localIP = "127.0.0.1"`, a value
+`FrpcSnippetRenderer.kt` on Portal-Server chose for a `network_mode: host` Docker
+sidecar. Inside a Home Assistant add-on container that same literal points at the
+add-on's *own* loopback interface, not at Home Assistant Core — so the tunnel would
+come up and lead nowhere.
+
+`pairing.sh` (`lc::adapt_frpc_toml`) rewrites that single line to
+`localIP = "homeassistant"` (HA Core's internal DNS name on the Supervisor network)
+and **aborts loudly** if the literal does not occur in the response exactly once —
+either zero times (the server stopped emitting it) or more than once (a second proxy
+block appeared) is treated as an unrecoverable renderer-format change, never silently
+patched or ignored.
+
+This is a **compensation for a contract weakness, not a feature**: `localIP` and
+`localPort` are statements about the *client's* runtime environment, which the
+server has no way to know in general — a Docker sidecar and a Home Assistant add-on
+container need different values for exactly the same tunnel. Follow-up ticket for
+Portal-Server: stop rendering `localIP`/`localPort` into the blob at all and let each
+client supply its own. Until that lands, this substitution lives here, and any
+renderer change on the server side surfaces as an explicit add-on failure instead of
+a silent misroute.
+
+== Repository layout
 
 `repository.yaml`:: Identifies this repo to the Supervisor's add-on store.
-`<slug>/`:: One folder per add-on, each with its own `config.yaml`, `Dockerfile`,
-run script, icon and logo. Not yet created.
+`laumann_connect/`:: The add-on itself — `config.yaml`, `Dockerfile`, `DOCS.md`,
+`CHANGELOG.md`, translations, icon/logo, and the `rootfs/` overlay (pairing library
+under `usr/lib/laumann-connect/`, s6-rc service definitions under
+`etc/s6-overlay/s6-rc.d/`).
+`tests/`:: Dependency-free test suite for the add-on's pairing logic (`run.sh`,
+assertion helpers, a `curl` stub, and fixtures). See "Local build & test" below.
+
+== Local build & test
+
+Run the test suite (bash, jq and curl only — no container, no bats, no npm):
+
+[source,shell]
+----
+./tests/run.sh
+----
+
+Build the add-on image locally, the same way the Supervisor would on a customer's
+device (pass the target architecture explicitly, since `BUILD_ARCH` is normally
+supplied by the Supervisor):
+
+[source,shell]
+----
+docker build --build-arg BUILD_ARCH=amd64 -t laumann-connect-test laumann_connect/
+docker run --rm --entrypoint /usr/bin/frpc laumann-connect-test -v   # expect 0.61.1
+----
+
+For the other supported architecture (`aarch64`) via QEMU emulation:
+
+[source,shell]
+----
+docker run --rm --privileged tonistiigi/binfmt --install arm64
+docker build --platform linux/arm64 --build-arg BUILD_ARCH=aarch64 \
+  -t laumann-connect-test:arm64 laumann_connect/
+----
+
+If https://www.shellcheck.net/[`shellcheck`] is on `PATH`, `tests/run.sh` also lints
+every shell script in the add-on; if it isn't installed, that check is skipped with a
+note rather than failing the suite.
+
+== Placeholders
+
+`laumann_connect/icon.png` and `laumann_connect/logo.png` are generic solid-color
+placeholders. Laumann Technology's actual branding is follow-up work and does not
+block this wave.
+
+== Version pins
+
+* `frpc` is pinned to **0.61.1**, mirroring the `frps` pin in
+  `Pepela-Smart-Home/Pepela-Cloud`'s `docker-compose.yml`
+  (`snowdreamtech/frps:0.61.1`) — "the same version as the other end of the cable",
+  deliberately not upstream's newest release. Both architectures' SHA-256 checksums
+  are pinned in the `Dockerfile` and verified during the build.
+* The base image is pinned to
+  `ghcr.io/home-assistant/base:3.24-2026.08.0`
+  by digest — the `FROM` line in the `Dockerfile` carries both the tag and
+  `@sha256:93ef607824e3f27e868f11b10938283a98bf880ed57bcf8eaa81c6c2d521f6f5`
+  (a multi-arch index covering `amd64` and `arm64`) — so a later re-push of that
+  same tag upstream can never silently change what customer supervisors build
+  against.
 
 == Conventions
 

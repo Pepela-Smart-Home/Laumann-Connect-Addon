@@ -1,0 +1,53 @@
+name: "Laumann Connect"
+version: "0.1.0"
+slug: "laumann_connect"
+description: "Sicherer Fernzugriff auf Home Assistant über Pepela Cloud – Einrichtung mit einem Kopplungscode."
+url: "https://github.com/Pepela-Smart-Home/Laumann-Connect-Addon"
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+init: false
+hassio_api: true
+host_network: false
+apparmor: true
+
+# Bewusst NICHT gesetzt:
+#   watchdog  — ein automatischer Neustart nach einem Pairing-Fehlschlag würde die
+#               serverseitige Per-IP-Sperre (5 Fehlversuche → 15 min) auslösen und den
+#               Kunden aus seinem eigenen Netz aussperren. "Gestoppt mit lesbarer
+#               Begründung" ist der richtige Endzustand.
+#               Dieser Grund gilt NUR für den Pairing-Oneshot selbst (der Endpunkt wird
+#               im bereits gekoppelten Zustand nie wieder aufgerufen). Ein davon
+#               unabhängiges Risiko — ein einzelner fehlgeschlagener frpc-Loginversuch
+#               beim Neustart (z. B. Router/DNS nach einem Host-Reboot noch nicht bereit)
+#               würde frpc sonst per Default (loginFailExit=true) beenden und über
+#               frpc/finish das gesamte Add-on halten — ist NICHT über watchdog gelöst,
+#               sondern direkt in der generierten frpc.toml selbst: lc::adapt_frpc_toml
+#               (pairing.sh) schreibt `loginFailExit = false`, sodass frpc bei einem
+#               Login-Fehlschlag weiter versucht statt sich zu beenden.
+#   image     — kein GHCR-Publish in dieser Welle; der Supervisor baut lokal beim Kunden
+#               (Download eines Tarballs, kein Compile). GHCR ist Folge-Welle.
+#   ports / map / homeassistant_api / privileged
+#             — nichts davon wird gebraucht; die Angriffsfläche bleibt minimal.
+
+options:
+  # pairing_code steht hier BEWUSST NICHT.
+  # Ein Default "" würde bei jedem Start gegen das match()-Regex validiert und
+  # scheitern: das "?"-Suffix macht den SCHLÜSSEL optional, nicht den WERT gültig
+  # (supervisor/apps/options.py, _single_validate + _check_missing_options).
+  # Das Feld erscheint trotzdem im UI, weil UiOptions aus dem schema-Block rendert.
+  portal_base_url: "https://portal.laumanntechnology.ge"
+  log_level: "info"
+
+schema:
+  # Sichtbares Textfeld (match ⇒ ui-type "string"), NICHT password — der Code ist auf
+  # Vorlesbarkeit hin entworfen (32 Symbole ohne I/O/0/1, Vierergruppen) und nach
+  # 15 Minuten wertlos. Siehe DOCS.md.
+  # Regex spiegelt TunnelPairingCodeGenerator.normalizeOrNull exakt: beliebig viele
+  # Bindestriche/Leerzeichen an beliebiger Position, genau 8 Alphabetzeichen.
+  # Einfache Anführungszeichen: keine YAML-Escape-Verarbeitung.
+  pairing_code: 'match(^[- ]*([A-HJ-NP-Za-hj-np-z2-9][- ]*){8}$)?'
+  portal_base_url: "url"
+  log_level: "list(trace|debug|info|notice|warning|error|fatal)?"

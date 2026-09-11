@@ -1,0 +1,13 @@
+serverAddr = "relay.laumanntechnologie.de"
+serverPort = 7000
+transport.tls.trustedCaFile = "/etc/frp/pepela-cloud-ca.crt"
+
+user = "client-abc123"
+metadatas.pepela_token = "super-secret-rotated-token-value"
+
+[[proxies]]
+name = "ha"
+type = "http"
+localIP = "127.0.0.1"
+localPort = 8123
+subdomain = "laumann-abc123"

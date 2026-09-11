@@ -1,0 +1,8 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+#
+# frpc's own verbosity is deliberately left at its default (not wired to the
+# add-on's log_level) — on debug/trace it echoes parts of its own config,
+# including metadatas.pepela_token, straight into the container log.
+bashio::log.info "Starte den Tunnel zu Pepela Cloud..."
+exec /usr/bin/frpc -c /data/frpc.toml

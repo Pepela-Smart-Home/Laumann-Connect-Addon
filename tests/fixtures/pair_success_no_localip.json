@@ -1,0 +1,6 @@
+{
+  "frpcToml": "serverAddr = \"relay.laumanntechnologie.de\"\nserverPort = 7000\ntransport.tls.trustedCaFile = \"/etc/frp/pepela-cloud-ca.crt\"\n\nuser = \"client-abc123\"\nmetadatas.pepela_token = \"super-secret-rotated-token-value\"\n\n[[proxies]]\nname = \"ha\"\ntype = \"http\"\nlocalPort = 8123\nsubdomain = \"laumann-abc123\"\n",
+  "caCertificatePem": "-----BEGIN CERTIFICATE-----\nMIIBTESTCERTIFICATECONTENTFORFIXTUREPURPOSESONLY==\n-----END CERTIFICATE-----\n",
+  "clientId": "client-abc123",
+  "subdomain": "laumann-abc123"
+}

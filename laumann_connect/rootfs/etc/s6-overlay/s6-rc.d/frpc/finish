@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+#
+# s6-rc "finish" script for the frpc longrun. A config that pairing.sh already
+# validated once should not keep respawning forever on failure — that pattern
+# (propagate the exit code into
+# /run/s6-linux-init-container-results/exitcode and halt the container,
+# mirroring the official Tailscale HAOS add-on) turns a silent crash-loop into
+# a visibly stopped add-on with a log line pointing at the cause.
+readonly exit_code="${1:-0}"
+readonly signal="${2:-0}"
+
+# Overridable so tests/run.sh can exercise this script directly against a
+# temp directory and a stub halt binary, without root and without touching
+# the real /run — production always gets the real s6 paths via these defaults.
+: "${LC_S6_RESULTS_DIR:=/run/s6-linux-init-container-results}"
+: "${LC_S6_HALT_BIN:=/run/s6/basedir/bin/halt}"
+
+# 0 = clean exit, 256 = "killed by signal" sentinel s6 uses for a deliberate
+# stop (e.g. the Supervisor stopping the add-on) — neither is a failure.
+if [ "$exit_code" -eq 0 ] || [ "$exit_code" -eq 256 ]; then
+    exit 0
+fi
+
+echo "frpc exited with code ${exit_code} (signal ${signal}) — stopping the add-on." >&2
+mkdir -p "$LC_S6_RESULTS_DIR"
+echo "${exit_code}" > "$LC_S6_RESULTS_DIR/exitcode"
+exec "$LC_S6_HALT_BIN"

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+#
+# Test stub for `jq` — a transparent passthrough to the REAL jq binary
+# (LC_REAL_JQ, resolved by tests/run.sh before this stubs directory is
+# prepended to PATH) that can be told, via LC_TEST_FAIL_CA_JQ, to fail
+# exactly the one call lc::write_ca_pem makes (`jq -r '.caCertificatePem'
+# ...`) — simulating an I/O failure there (e.g. /data out of space) without
+# touching any of the many OTHER jq calls the flow makes (parsing
+# options.json, validating the pair response, extracting frpcToml/clientId/
+# subdomain, stripping the pairing code, ...). Every other test relies on
+# this stub behaving exactly like real jq, so the passthrough must be exact:
+# same argv, same stdin, same stdout/stderr, same exit code.
+set -o errexit -o nounset -o pipefail
+
+if [ "${LC_TEST_FAIL_CA_JQ:-}" = "1" ] && [ "${1:-}" = "-r" ] && [ "${2:-}" = ".caCertificatePem" ]; then
+    exit 1
+fi
+
+exec "${LC_REAL_JQ:?LC_REAL_JQ not set — tests/run.sh must export it before prepending tests/stubs to PATH}" "$@"

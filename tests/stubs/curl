@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+#
+# Test stub for `curl`. Placed first on PATH by tests/run.sh so pairing.sh's
+# curl calls never touch the network. Logs every invocation's argv to
+# $LC_TEST_CALL_LOG (used to assert call counts and to prove the pairing code
+# never appears there — it must have gone over stdin), then serves a canned
+# response based on which endpoint URL was targeted.
+set -o errexit -o nounset -o pipefail
+
+: "${LC_TEST_CALL_LOG:=/dev/null}"
+printf '%s\n' "$*" >> "$LC_TEST_CALL_LOG"
+
+args=("$@")
+url="${args[$((${#args[@]} - 1))]}"
+
+output_file=""
+header_file=""
+fail_mode=false
+
+i=0
+while [ "$i" -lt "${#args[@]}" ]; do
+    case "${args[$i]}" in
+        -o) i=$((i + 1)); output_file="${args[$i]}" ;;
+        -D) i=$((i + 1)); header_file="${args[$i]}" ;;
+        --fail-with-body | --fail) fail_mode=true ;;
+    esac
+    i=$((i + 1))
+done
+
+# Always drain stdin (the --data-binary @- payload) so the real pipeline never
+# blocks or SIGPIPEs the writer.
+cat >/dev/null || true
+
+status_code="000"
+case "$url" in
+    */api/tunnel-clients/pair)
+        # LC_TEST_PAIR_STATUS_SEQUENCE lets a single test simulate a retry:
+        # a comma-separated list of statuses returned in order across
+        # successive pair calls (holding the last entry once exhausted). A
+        # counter file next to the call log tracks how many pair calls this
+        # test has made so far.
+        if [ -n "${LC_TEST_PAIR_STATUS_SEQUENCE:-}" ]; then
+            seq_file="${LC_TEST_CALL_LOG}.pairseq"
+            idx=0
+            [ -f "$seq_file" ] && idx="$(cat "$seq_file")"
+            echo "$((idx + 1))" > "$seq_file"
+            IFS=',' read -r -a seq_arr <<< "$LC_TEST_PAIR_STATUS_SEQUENCE"
+            last_idx=$((${#seq_arr[@]} - 1))
+            if [ "$idx" -le "$last_idx" ]; then
+                status_code="${seq_arr[$idx]}"
+            else
+                status_code="${seq_arr[$last_idx]}"
+            fi
+        else
+            status_code="${LC_TEST_PAIR_STATUS:-200}"
+        fi
+
+        if [ -n "${LC_TEST_PAIR_BODY_FILE:-}" ] && [ -f "${LC_TEST_PAIR_BODY_FILE}" ]; then
+            [ -n "$output_file" ] && cp "${LC_TEST_PAIR_BODY_FILE}" "$output_file"
+        else
+            [ -n "$output_file" ] && : > "$output_file"
+        fi
+        if [ -n "$header_file" ]; then
+            {
+                printf 'HTTP/1.1 %s\r\n' "$status_code"
+                if [ "$status_code" = "429" ] && [ -n "${LC_TEST_RETRY_AFTER:-}" ]; then
+                    printf 'Retry-After: %s\r\n' "${LC_TEST_RETRY_AFTER}"
+                fi
+                printf '\r\n'
+            } > "$header_file"
+        fi
+        ;;
+    */addons/self/options)
+        status_code="${LC_TEST_OPTIONS_STATUS:-200}"
+        [ -n "$output_file" ] && : > "$output_file"
+        ;;
+    *)
+        status_code="000"
+        [ -n "$output_file" ] && : > "$output_file"
+        ;;
+esac
+
+printf '%s' "$status_code"
+
+if $fail_mode; then
+    case "$status_code" in
+        000) exit 7 ;;
+        2??) exit 0 ;;
+        *) exit 22 ;;
+    esac
+else
+    if [ "$status_code" = "000" ]; then
+        exit 7
+    fi
+    exit 0
+fi

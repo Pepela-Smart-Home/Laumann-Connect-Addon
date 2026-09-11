@@ -1,3 +1,9 @@
 .DS_Store
 *.log
 .env
+
+# Never accidentally commit a local test/debug artifact that might carry a real
+# tunnel secret or certificate.
+*.tmp
+*.crt
+*.toml.local

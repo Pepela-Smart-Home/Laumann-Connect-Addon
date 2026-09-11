@@ -1,0 +1,30 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+#
+# Glue only — all logic lives in /usr/lib/laumann-connect/pairing.sh. A failing
+# lc::main exits non-zero, which fails this oneshot; the base image sets
+# S6_BEHAVIOUR_IF_STAGE2_FAILS=2, so the container stops with the message
+# already printed above instead of silently limping on without a tunnel.
+set -o errexit -o nounset -o pipefail
+set +x
+umask 077
+
+# Overridable only for tests/run.sh (same names/defaults pairing.sh itself
+# uses) — production always gets the real container paths via these defaults.
+: "${LC_OPTIONS_FILE:=/data/options.json}"
+: "${LC_PAIRING_SH:=/usr/lib/laumann-connect/pairing.sh}"
+
+# The jq `// "info"` default only covers a MISSING key — if LC_OPTIONS_FILE
+# itself is absent or unreadable, jq exits non-zero with nothing on stdout and
+# an error on stderr, which would otherwise (a) abort this script right here
+# under `set -o errexit` (a bare `var=$(failing-cmd)` assignment IS subject to
+# errexit, unlike a command substitution used as a plain argument) and, were
+# errexit not in play, (b) reach bashio::log.level as an empty string and
+# abort with "FATAL: Unknown log_level:" — either way before lc::main ever
+# runs. Redirect jq's stderr away, survive its exit status, and fall back to
+# "info" on any empty result too.
+log_level="$(jq -r '.log_level // "info"' "$LC_OPTIONS_FILE" 2>/dev/null)" || true
+bashio::log.level "${log_level:-info}"
+# shellcheck source=../../../../usr/lib/laumann-connect/pairing.sh
+source "$LC_PAIRING_SH"
+lc::main

@@ -1,0 +1,15 @@
+configuration:
+  pairing_code:
+    name: "Kopplungscode"
+    description: >-
+      Der 8-stellige Code von Laumann Technology, z. B. K7QM-3XRA. Groß-/Kleinschreibung
+      und Bindestriche sind egal. Der Code gilt 15 Minuten und nur ein einziges Mal —
+      nach erfolgreicher Kopplung wird dieses Feld automatisch geleert.
+  portal_base_url:
+    name: "Portal-Adresse"
+    description: >-
+      Basisadresse des Portal-Servers. Muss mit https:// beginnen. Nur ändern, wenn
+      Laumann Technology Sie dazu auffordert.
+  log_level:
+    name: "Protokollstufe"
+    description: "Ausführlichkeit der Add-on-Protokolle. Standard: info."
