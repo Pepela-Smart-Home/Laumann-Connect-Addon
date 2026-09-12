@@ -61,7 +61,3 @@ Backup nutzlos, weil eine neue Kopplung nötig wäre. Ein Backup von **vor**
 der letzten Kopplung enthält ohnehin einen bereits ungültigen Schlüssel, weil
 jede Kopplung den Schlüssel serverseitig rotiert.
 
-## Platzhalter-Branding
-
-Symbol und Logo dieses Add-ons sind derzeit generische Platzhalter. Das
-Laumann-Technology-Branding folgt in einer Folgewelle.
