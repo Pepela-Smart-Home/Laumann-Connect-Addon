@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Real branding: `icon.png`/`logo.png` replaced with Laumann Technology's actual logo
   (previously generic placeholders).

@@ -1,5 +1,5 @@
 name: "Laumann Connect"
-version: "0.1.0"
+version: "0.2.0"
 slug: "laumann_connect"
 description: "Sicherer Fernzugriff auf Home Assistant über Pepela Cloud – Einrichtung mit einem Kopplungscode."
 url: "https://github.com/Pepela-Smart-Home/Laumann-Connect-Addon"
