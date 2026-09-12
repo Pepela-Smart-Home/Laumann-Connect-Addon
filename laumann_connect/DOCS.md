@@ -1,65 +1,62 @@
 # Laumann Connect
 
-Sicherer Fernzugriff auf Ihre Home Assistant-Installation über Pepela Cloud.
+Secure remote access to your Home Assistant installation via Pepela Cloud.
 
-## Einrichtung
+## Setup
 
-1. Fordern Sie bei Laumann Technology einen **Kopplungscode** an (8 Zeichen,
-   z. B. `K7QM-3XRA`). Der Code gilt **15 Minuten** und kann nur **einmal**
-   verwendet werden.
-2. Öffnen Sie die Konfiguration dieses Add-ons und tragen Sie den Code in das
-   Feld **Kopplungscode** ein. Groß-/Kleinschreibung und Bindestriche spielen
-   keine Rolle.
-3. Starten Sie das Add-on. Im Protokoll erscheint bei Erfolg eine Meldung mit
-   Ihrer Client-Kennung und Subdomain, und das Kopplungscode-Feld wird
-   automatisch geleert.
-4. Ab jetzt ist Ihr Home Assistant über den Pepela-Cloud-Tunnel erreichbar.
-   Ein Neustart des Add-ons erkennt die bestehende Kopplung automatisch
-   wieder — es ist kein erneutes Eintragen eines Codes nötig.
+1. Request a **pairing code** from Laumann Technology (8 characters, e.g.
+   `K7QM-3XRA`). The code is valid for **15 minutes** and can only be used
+   **once**.
+2. Open this add-on's configuration and enter the code in the **Pairing
+   code** field. Case and dashes don't matter.
+3. Start the add-on. On success, the log shows a message with your client ID
+   and subdomain, and the pairing-code field is cleared automatically.
+4. Your Home Assistant is now reachable via the Pepela Cloud tunnel. A
+   restart of the add-on recognizes the existing pairing automatically — no
+   need to enter a code again.
 
-## Optionen
+## Options
 
-| Option | Beschreibung |
+| Option | Description |
 |---|---|
-| `pairing_code` | Der Kopplungscode. Nur beim ersten Einrichten nötig. |
-| `portal_base_url` | Adresse des Portal-Servers. Nur auf ausdrückliche Anweisung von Laumann Technology ändern. |
-| `log_level` | Ausführlichkeit der Protokollausgabe. Standard: `info`. |
+| `pairing_code` | The pairing code. Only needed for the initial setup. |
+| `portal_base_url` | Address of the portal server. Only change this if Laumann Technology explicitly asks you to. |
+| `log_level` | Verbosity of the log output. Default: `info`. |
 
-## Was bei einem erneuten Start passiert
+## What happens on a restart
 
-Wenn bereits erfolgreich gekoppelt wurde, prüft das Add-on das nicht erneut
-gegen den Portal-Server — es verwendet die beim ersten Mal gespeicherte
-Konfiguration. Das Zertifikat für die verschlüsselte Verbindung wird bei
-jedem Start neu bereitgestellt, weil dieser Teil des Containers keinen
-Neustart übersteht; das ist normal und erfordert keine Aktion Ihrerseits.
+Once successfully paired, the add-on does not check again against the
+portal server — it reuses the configuration stored the first time. The
+certificate for the encrypted connection is re-provisioned on every start,
+because that part of the container does not survive a restart; this is
+normal and requires no action on your part.
 
-Ein Wert im Feld **Kopplungscode** wird bei einer bereits gekoppelten
-Installation immer ignoriert und nicht verbraucht (das Add-on-Protokoll weist
-beim nächsten Start darauf hin) — unabhängig davon, ob es sich um den zuletzt
-erfolgreich verwendeten Code handelt (das Feld wird nach erfolgreicher
-Kopplung normalerweise automatisch geleert, kann in seltenen Fällen aber
-stehen bleiben) oder um einen neu eingetragenen. Steht dort noch der alte,
-bereits verwendete Code, können Sie das Feld einfach leeren. Nur um einen
-**neuen** Code wirksam zu machen, müssen Sie zuvor die Add-on-Daten
-zurücksetzen und danach erneut koppeln.
+A value in the **Pairing code** field is always ignored and never consumed
+on an already-paired installation (the add-on log points this out on the
+next start) — regardless of whether it's the code that was last used
+successfully (the field is normally cleared automatically after a
+successful pairing, but can in rare cases remain set) or a newly entered
+one. If the old, already-used code is still there, you can simply clear the
+field. To make a **new** code take effect, you must first reset the
+add-on's data and then pair again.
 
-## Wenn etwas schiefgeht
+## If something goes wrong
 
-Das Add-on-Protokoll erklärt jeden Fehlerfall in Klartext — z. B. einen
-abgelaufenen Code, eine falsche Portal-Adresse, oder einen nicht erreichbaren
-Server. Bei zu vielen Fehlversuchen hintereinander wartet das Add-on
-automatisch eine vom Server vorgegebene Zeit und versucht es genau ein
-weiteres Mal, bevor es aufgibt — ein wiederholtes manuelles Neustarten sperrt
-sonst Ihre Internetadresse für 15 Minuten beim Portal-Server.
+The add-on log explains every failure case in plain language — e.g. an
+expired code, a wrong portal address, or an unreachable server. After too
+many failed attempts in a row, the add-on automatically waits for a
+server-specified duration and tries exactly one more time before giving
+up — repeatedly restarting manually instead would otherwise lock your
+internet address out at the portal server for 15 minutes.
 
-## Datensicherung
+## Backups
 
-Ihr Tunnel-Zugangsschlüssel liegt in den Add-on-Daten (`/data`) und ist damit
-Teil jedes Home-Assistant-Backups, das nach einer erfolgreichen Kopplung
-erstellt wird. Das ist beabsichtigt: ohne ihn wäre ein wiederhergestelltes
-Backup nutzlos, weil eine neue Kopplung nötig wäre. Ein Backup von **vor**
-der letzten Kopplung enthält ohnehin einen bereits ungültigen Schlüssel, weil
-jede Kopplung den Schlüssel serverseitig rotiert.
+Your tunnel access key lives in the add-on's data (`/data`) and is
+therefore part of every Home Assistant backup created after a successful
+pairing. This is intentional: without it, a restored backup would be
+useless, since a new pairing would be required. A backup from **before**
+the last pairing already contains a key that is invalid anyway, because
+each pairing rotates the key server-side.
 
 ## Onboarding guide for Laumann developers
 
