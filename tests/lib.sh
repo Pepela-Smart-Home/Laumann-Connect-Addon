@@ -65,6 +65,29 @@ t::true() {
     t::pass "$1"
 }
 
+# t::stat_size <path> — file size in bytes. GNU coreutils (Linux, the add-on's
+# own Alpine container) and BSD stat (macOS, where these tests also need to
+# run per the vault's multi-machine convention) disagree on flag syntax —
+# `stat -c` is a fatal "illegal option" on macOS. Try GNU first, fall back to
+# BSD; whichever the host actually has will succeed, the other's stderr is
+# discarded.
+t::stat_size() {
+    stat -c '%s' "$1" 2>/dev/null || stat -f '%z' "$1"
+}
+
+# t::stat_mode <path> — octal permission bits (e.g. "600"), same GNU/BSD split.
+t::stat_mode() {
+    stat -c '%a' "$1" 2>/dev/null || stat -f '%OLp' "$1"
+}
+
+# t::basenames <dir> — sorted, newline-separated basenames of the regular
+# files directly in <dir>. `find -printf` is GNU-only (BSD find on macOS has
+# no -printf at all), so this sticks to portable `find` primaries plus a
+# `basename` pass instead.
+t::basenames() {
+    find "$1" -maxdepth 1 -type f -exec basename {} \; | sort
+}
+
 t::summary() {
     printf '\n%d/%d tests passed\n' "$((LC_TEST_COUNT - LC_TEST_FAILURES))" "$LC_TEST_COUNT"
     [ "$LC_TEST_FAILURES" -eq 0 ]

@@ -203,7 +203,7 @@ lc::adapt_frpc_toml "$FIXTURES/frpc_toml_valid.txt" "$adapt_ro_out" 2>/dev/null
 rc=$?
 set -e
 t::rc "adapt_frpc_toml(target dir is not a directory, mktemp fails) rc == 6" "6" "$rc"
-t::eq "adapt_frpc_toml(target dir is not a directory) leaves the placeholder untouched" "0" "$(stat -c '%s' "$adapt_notadir")"
+t::eq "adapt_frpc_toml(target dir is not a directory) leaves the placeholder untouched" "0" "$(t::stat_size "$adapt_notadir")"
 
 # --- lc::adapt_frpc_toml : rc 6 (sed itself fails) ---------------------------
 # mktemp succeeds here (a real, writable target dir), so this exercises the
@@ -283,7 +283,7 @@ set -e
 t::rc "write_ca_pem(valid body) rc == 0" "0" "$rc"
 if [ -f "$ca_write_out" ]; then
     t::contains "write_ca_pem(valid body) output has END CERTIFICATE" "$(cat "$ca_write_out")" "-----END CERTIFICATE-----"
-    mode="$(stat -c '%a' "$ca_write_out")"
+    mode="$(t::stat_mode "$ca_write_out")"
     t::eq "write_ca_pem(valid body) mode 600" "600" "$mode"
 else
     t::fail "write_ca_pem(valid body) produced an output file"
@@ -300,7 +300,7 @@ lc::write_ca_pem "$ca_body" "$ca_ro_out" 2>/dev/null
 rc=$?
 set -e
 t::rc "write_ca_pem(target dir is not a directory, mktemp fails) rc == 6" "6" "$rc"
-t::eq "write_ca_pem(target dir is not a directory) leaves the placeholder untouched" "0" "$(stat -c '%s' "$ca_notadir")"
+t::eq "write_ca_pem(target dir is not a directory) leaves the placeholder untouched" "0" "$(t::stat_size "$ca_notadir")"
 
 # --- lc::write_ca_pem : rc 6 (jq itself fails) --------------------------------
 # Mutation-style guard, analogous to the sed/mv coverage above: a swallowed jq
@@ -451,14 +451,14 @@ if [ -f "$data12/frpc.toml" ]; then
     t::pass "T12 frpc.toml created"
     t::contains "T12 frpc.toml rewritten for homeassistant" "$(cat "$data12/frpc.toml")" 'localIP = "homeassistant"'
     t::contains "T12 frpc.toml carries loginFailExit = false" "$(cat "$data12/frpc.toml")" 'loginFailExit = false'
-    mode="$(stat -c '%a' "$data12/frpc.toml")"
+    mode="$(t::stat_mode "$data12/frpc.toml")"
     t::eq "T12 frpc.toml mode 600" "600" "$mode"
 else
     t::fail "T12 frpc.toml created"
 fi
 if [ -f "$data12/pepela-cloud-ca.crt" ]; then
     t::pass "T12 CA written to /data"
-    mode="$(stat -c '%a' "$data12/pepela-cloud-ca.crt")"
+    mode="$(t::stat_mode "$data12/pepela-cloud-ca.crt")"
     t::eq "T12 /data CA mode 600" "600" "$mode"
 else
     t::fail "T12 CA written to /data"
@@ -611,7 +611,7 @@ run_flow LC_DATA_DIR="$data15" LC_CA_DIR="$ca15" LC_OPTIONS_FILE="$data15/option
 t::rc "T15 400 response: rc == 1" "1" "$FLOW_RC"
 t::contains "T15 message mentions rejection" "$FLOW_OUT" "nicht akzeptiert"
 t::eq "T15 exactly 1 curl call" "1" "$(wc -l < "$log15" | tr -d '[:space:]')"
-only_options_file="$(find "$data15" -maxdepth 1 -type f -printf '%f\n' | sort)"
+only_options_file="$(t::basenames "$data15")"
 t::eq "T15 /data contains only options.json" "options.json" "$only_options_file"
 
 # --- Test 16: 429 then 200 (exactly one retry, succeeds) ----------------------
@@ -819,7 +819,7 @@ t::not_contains "T26 (tracing forced on by caller) never contains the pairing co
 
 # --- Test 27: no leftover temp artifacts under /data after success ----------
 
-files27="$(find "$data25" -maxdepth 1 -type f -printf '%f\n' | sort | tr '\n' ' ')"
+files27="$(t::basenames "$data25" | tr '\n' ' ')"
 t::eq "T27 /data contains exactly options.json, frpc.toml, pepela-cloud-ca.crt" \
     "frpc.toml options.json pepela-cloud-ca.crt " "$files27"
 
