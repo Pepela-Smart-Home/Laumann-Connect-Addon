@@ -92,11 +92,13 @@ If https://www.shellcheck.net/[`shellcheck`] is on `PATH`, `tests/run.sh` also l
 every shell script in the add-on; if it isn't installed, that check is skipped with a
 note rather than failing the suite.
 
-== Placeholders
+== Branding
 
-`laumann_connect/icon.png` and `laumann_connect/logo.png` are generic solid-color
-placeholders. Laumann Technology's actual branding is follow-up work and does not
-block this wave.
+`laumann_connect/icon.png` (128×128, the store grid icon) and `laumann_connect/logo.png`
+(250×100, the add-on detail page banner) are derived from Laumann Technology's real logo
+(`07 Anhänge/Pepela Innovation/Laumann Technology/Laumann Technology Logo.svg` in the
+vault) — the icon crops the logo's isolated circuit-board pictorial mark, the logo uses
+the full wordmark on a white background. No longer placeholders (2026-09-12).
 
 == Version pins
 

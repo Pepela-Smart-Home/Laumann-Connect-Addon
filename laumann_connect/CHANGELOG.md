@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Real branding: `icon.png`/`logo.png` replaced with Laumann Technology's actual logo
+  (previously generic placeholders).
 - Fix: the generated `frpc.toml` now sets `loginFailExit = false`. frpc's own
   default (`true`) made a single failed login attempt after a restart (e.g.
   the customer's router/DNS not yet back up after a reboot) exit the process,
